@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: postgres
+  name: postgres-config
+data:
+  initialize_table.sql: |
+    CREATE TABLE IF NOT EXISTS image_metadata (
+      camera_id INT,
+      image_timestamp BIGINT,
+      image_type VARCHAR(5),
+      bucket_url VARCHAR(255),
+      PRIMARY KEY(camera_id, image_timestamp, image_type)
+    )
