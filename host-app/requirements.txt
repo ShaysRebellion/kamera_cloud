@@ -1,0 +1,2 @@
+paho-mqtt>=1.6.1
+opencv-kamera@git+https://github.com/ShaysRebellion/opencv_kamera.git@v0.0.1#subdirectory=opencv_kamera
