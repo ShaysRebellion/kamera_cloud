@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: webserver
+  name: webserver
+  annotations:
+    kubernetes.io/ingress.class: ingress-nginx
+spec:
+  rules:
+    - host: kamera-cloud.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webserver
+                port:
+                  number: 80

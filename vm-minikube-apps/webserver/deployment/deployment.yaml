@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: webserver
+  name: webserver
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+        - name: webserver
+          image: shaysrebellion/kamera-cloud-webserver:latest
+          env:
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /aws/credentials
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+          volumeMounts:
+            - name: aws-s3-config
+              mountPath: /aws
+              readOnly: true
+      volumes:
+        - name: aws-s3-config
+          secret:
+            secretName: aws-s3-config
+            optional: false

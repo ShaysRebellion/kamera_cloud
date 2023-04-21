@@ -1,0 +1,50 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  namespace: rabbitmq-cluster
+  name: rabbitmq-cluster
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 250Mi
+    limits:
+      cpu: 500m
+      memory: 500Mi
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_mqtt
+    additionalConfig: |
+      mqtt.vhost        = /
+      mqtt.exchange     = amq.topic
+  service:
+    type: LoadBalancer
+  override:
+    service:
+      spec:
+        ports:
+          - appProtocol: mqtt
+            name: mqtt
+            nodePort: 30000
+            port: 1883
+            protocol: TCP
+            targetPort: 1883
+          - appProtocol: amqp
+            name: amqp
+            nodePort: 30001
+            port: 5672
+            protocol: TCP
+            targetPort: 5672
+          - appProtocol: http
+            name: management
+            nodePort: 30005
+            port: 15672
+            protocol: TCP
+            targetPort: 15672
+          - appProtocol: prometheus.io/metrics
+            name: prometheus
+            nodePort: 30006
+            port: 15692
+            protocol: TCP
+            targetPort: 15692
