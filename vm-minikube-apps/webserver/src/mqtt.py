@@ -20,7 +20,7 @@ mqtt = FastMQTT(
 )
 
 @mqtt.subscribe("amq.topic")
-async def on_message_to_topic(client, topic, payload, qos, properties):
+async def on_receive_image_data(client, topic, payload, qos, properties):
     data = json.loads(payload.decode())
 
     # set_image_metadata([{

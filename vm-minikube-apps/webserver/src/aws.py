@@ -1,5 +1,6 @@
-from typing import BinaryIO, TypedDict
 import io
+import os
+from typing import BinaryIO, TypedDict
 import boto3
 
 class AwsObjectData(TypedDict):
@@ -11,8 +12,8 @@ class AwsOperationResult(TypedDict):
     result: bool
 
 s3_client = boto3.client('s3')
-aws_s3_bucket = 'kamera-cloud-image-bucket'
-aws_region = 'ap-northeast-1'
+aws_s3_bucket = os.environ.get('AWS_S3_IMAGE_BUCKET', 'kamera-cloud-image-bucket')
+aws_region = os.environ.get('AWS_S3_IMAGE_BUCKET_REGION', 'ap-northeast-1')
 
 def aws_url_formation(file_name: str):
     return 'https://{bucket}.s3.{region}.amazonaws.com/{file_name}'.format(bucket = aws_s3_bucket, region = aws_region, file_name = file_name)

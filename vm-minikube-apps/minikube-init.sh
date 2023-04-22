@@ -1,3 +1,10 @@
+# Note: this script makes the following assumptions:
+# 1. The machine is a Linux environment (host, VM, etc). Other environments such as macOS (and probably Windows) will not
+#    properly resolve external cluster ip, i.e. minikube ip command.
+# 2. minikube and kubectl are installed on this machine
+
+# Initialize minikube cluster: the below are minimum resources required to run this application
+minikube delete
 minikube start --nodes 4 --cpus 2 --memory 2048 --driver docker
 
 # https://github.com/kubernetes/minikube/issues/12360#issuecomment-1123794143)
@@ -8,39 +15,55 @@ minikube addons enable csi-hostpath-driver
 kubectl patch storageclass csi-hostpath-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 minikube addons enable ingress
 
-while true; do
-    read -p "Do you wish to install this program? " yn
-    case $yn in
-        [Yy]* ) make install; break;;
-        [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-# TODO: BREAKPOINT
-minikube tunnel
-
-# Postgres (postgres directory):
+# Set up postgres Kubernetes service:
+cd /app/postgres
 kubectl apply -f namespace.yaml
 kubectl apply -f configmap.yaml
 kubectl apply -f statefulset.yaml
 kubectl apply -f service.yaml
 
-# RabbitMq (rabbitmq directory):
+# Set up rabbitmq cluster Kubernetes service:
+cd /app/rabbitmq
 kubectl apply -f "https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml"
 kubectl apply -f namespace.yaml
 kubectl apply -f rabbitmq.yaml
+kubectl cp cluster-init.sh rabbitmq-cluster/rabbitmq-cluster-server-0:/tmp
+kubectl exec -it rabbitmq-cluster-server-0 -n rabbitmq-cluster -- /bin/bash /tmp/cluster-init.sh
 
-# Redis (redis directory)
-kubectl apply -f redis-cluster-namespace.yaml
-kubectl apply -f redis-cluster-service.yaml
-kubectl apply -f redis-cluster.yaml
-kubectl exec -it redis-cluster -n redis-cluster –- /bin/bash
-copy and run redis-cluster-create.sh
+# Set up redis cluster Kubernetes service:
+cd /app/redis-cluster
+kubectl apply -f namespace.yaml
+kubectl apply -f configmap.yaml
+kubectl apply -f service.yaml
+kubectl apply -f statefulset.yaml
+kubectl cp cluster-init.sh redis-cluster/redis-cluster-0:/tmp
+kubectl exec -it redis-cluster-0 -n redis-cluster -- /bin/bash /tmp/cluster-init.sh
 
-docker pull nginx_kubernetes_proxy nginx:latest
-docker run -d --rm --network host -v ./nginx.conf:/etc/nginx/nginx.conf --name nginx_kubernetes_proxy nginx:latest
+# Set up webserver service:
+cd /app/webserver/deployment
+kubectl apply -f namespace.yaml
+kubectl apply -f secret.yaml
+kubectl apply -f ingress.yaml
+kubectl apply -f service.yaml
+kubectl apply -f deployment.yaml
 
-# Insert into /etc/hosts for local dns resolution:
-# For forwarding/connecting to rabbitmq broker within multipass virtual machine minikube
-192.168.205.2 mqtt.kamera-cloud-rabbitmq.io
+sudo -i
+
+if ! grep -q host-vm.io /etc/hosts; then
+    echo -e "# For listening/forwarding http traffic to (minikube) cluster" >> /etc/hosts
+    echo -e "192.168.205.2 listen host-vm.io\n" >> /etc/hosts
+fi
+
+if ! grep -q minikube.io /etc/hosts; then
+    echo -e "# For forwarding/forwarding mqtt traffic to (minikube) cluster" >> /etc/hosts
+    echo -e "192.168.49.2 minikube.io\n" >> /etc/hosts
+fi
+
+exit
+
+# Set up nginx proxy for forwarding mqtt and http traffic
+cd /app
+docker pull nginx:latest
+docker run -d --rm --network host -v ./nginx.conf:/etc/nginx/nginx.conf --name nginx-kubernetes-proxy nginx:latest
+
+echo "In a separate tab/window; please run: minikube tunnel. This enables mqtt traffic forwarding."
