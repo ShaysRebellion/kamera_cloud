@@ -1,13 +1,13 @@
 import json
-import uuid
-
+import logging
+from uuid import uuid4
 from fastapi_mqtt import FastMQTT, MQTTConfig
 from gmqtt.mqtt.constants import MQTTv311
-
-from .aws import AwsObjectData, AwsOperationResult, upload_files
-from .postgres import ImageMetadataEntry, set_image_metadata
-from .redis import set_image_data
+from opencv_kamera_types import ImageFormat
+from .operations import ImageDataInput, system_write_images
 from .utils import get_cluster_ip_address
+
+log = logging.getLogger(__name__)
 
 mqtt = FastMQTT(
     config=MQTTConfig(
@@ -22,15 +22,20 @@ mqtt = FastMQTT(
 @mqtt.subscribe("amq.topic")
 async def on_receive_image_data(client, topic, payload, qos, properties):
     data = json.loads(payload.decode())
+    writeData: ImageDataInput = {
+        'camera_id': data['camera_id'],
+        'timestamp_ms': data['timestamp_ms'],
+        'file_name': '{uuid}.{format}'.format(uuid = uuid4(), format = data['image_format'].replace('.', '')),
+        'byte_data': data['byte_data']
+    }
 
-    # set_image_metadata([{
-    #     'camera_id': data['camera_id'],
-    #     'image_timestamp': data['timestamp_ms'],
-    #     'image_format': data['image_format'],
-    #     'bucket_url': '',
-    # }])
+    log.debug('Payload: {}'.format(payload))
+    log.debug('Decoded payload: {}'.format(payload.decode()))
+    log.debug('Decoded payload; decoded JSON: {}'.format(data))
+    log.debug('WRITE: {}'.format(json.dumps([writeData])))
 
-    # set_image_data()
+    # system_write_images([writeData])
+
 
 def init_app_mqtt(app) -> None:
     mqtt.init_app(app)

@@ -1,8 +1,6 @@
 import json
 import time
-
 import paho.mqtt.client as mqtt
-
 from opencv_kamera_types import ImageColor, ImageFormat
 from opencv_kamera import OpenCvCamera
 
@@ -37,7 +35,7 @@ def main():
             'camera_id': 0,
             'timestamp_ms': round(time.time() * 1000),
             'image_format': image_format,
-            'image': bytes(image)
+            'byte_data': bytes(image)
         }))
 
         end_session = input('End session (y/N): ')[0].lower() == 'y'
