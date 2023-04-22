@@ -8,6 +8,6 @@ pyenv local kamera-cloud-client-3.10.0
 pip install -r requirements.txt
 
 if ! grep -q mqtt.kamera-cloud-rabbitmq.io /etc/hosts; then
-    echo "# For forwarding/connecting to rabbitmq broker within multipass virtual machine minikube" >> /etc/hosts
-    echo "192.168.205.2 mqtt.kamera-cloud-rabbitmq.io" >> /etc/hosts
+    echo -e "# For connecting to rabbitmq broker within (multipass) virtual machine (minikube) cluster" >> /etc/hosts
+    echo -e "192.168.205.2 mqtt.kamera-cloud-rabbitmq.io\n" >> /etc/hosts
 fi
