@@ -8,6 +8,7 @@ from typing import Tuple
 from fastapi import FastAPI, Request
 
 log = logging.getLogger(__name__)
+
 worker_file = '{dir}/worker.py'.format(dir = dirname(dirname(abspath(__file__))))
 slack_api_v1 = FastAPI()
 

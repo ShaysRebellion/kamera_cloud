@@ -1,4 +1,4 @@
-import json
+import struct
 import time
 import paho.mqtt.client as mqtt
 from opencv_kamera_types import ImageColor, ImageFormat
@@ -14,7 +14,7 @@ def prompt_user_image_info(info: str, infoEnumClass) -> str:
             is_valid = True
             image_info = enum_value.value
         except Exception as e:
-            print('Valid image {}: {}'.format(info, [entry.value for entry in infoEnumClass]).replace("'", ""))
+            print('Valid image {}: {}'.format(info, [entry.value for entry in infoEnumClass if not entry == ImageFormat.RAW]).replace("'", ""))
     return image_info
 
 def main():
@@ -30,13 +30,9 @@ def main():
         image_color = prompt_user_image_info('color', ImageColor)
         image_format = prompt_user_image_info('format', ImageFormat)
 
-        _, image = camera.snap_image(ImageColor(image_color), ImageFormat(image_color))
-        mqttc.publish('amq.topic', json.dumps({
-            'camera_id': 0,
-            'timestamp_ms': round(time.time() * 1000),
-            'image_format': image_format,
-            'byte_data': bytes(image)
-        }))
+        _, image = camera.snap_image(ImageColor(image_color), ImageFormat(image_format))
+        data_pack = struct .pack( '>LLQ4s{image_size}B'.format(image_size = len(image)), len(image), 0, round(time.time() * 1000), bytes(image_format, 'utf-8'), *image.tobytes())
+        mqttc.publish('amq/topic', data_pack)
 
         end_session = input('End session (y/N): ')[0].lower() == 'y'
 

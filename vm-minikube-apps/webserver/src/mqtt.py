@@ -1,9 +1,8 @@
-import json
 import logging
+import struct
 from uuid import uuid4
 from fastapi_mqtt import FastMQTT, MQTTConfig
 from gmqtt.mqtt.constants import MQTTv311
-from opencv_kamera_types import ImageFormat
 from .operations import ImageDataInput, system_write_images
 from .utils import get_cluster_ip_address
 
@@ -19,23 +18,22 @@ mqtt = FastMQTT(
     )
 )
 
-@mqtt.subscribe("amq.topic")
+@mqtt.subscribe("amq/topic")
 async def on_receive_image_data(client, topic, payload, qos, properties):
-    data = json.loads(payload.decode())
+    image_size = int.from_bytes(payload[0:4], 'big')
+    unpack_data = struct.unpack('>LLQ4s{image_size}B'.format(image_size = image_size), payload)
+    _, camera_id, timestamp_ms, image_format = unpack_data[0:4]
+    image_format = image_format.decode('utf-8')
+    image_data = bytes(unpack_data[4:])
+
     writeData: ImageDataInput = {
-        'camera_id': data['camera_id'],
-        'timestamp_ms': data['timestamp_ms'],
-        'file_name': '{uuid}.{format}'.format(uuid = uuid4(), format = data['image_format'].replace('.', '')),
-        'byte_data': data['byte_data']
+        'camera_id': camera_id,
+        'timestamp_ms': timestamp_ms,
+        'file_name': '{uuid}.{image_format}'.format(uuid = uuid4(), image_format = image_format.replace('.', '')),
+        'byte_data': image_data,
     }
 
-    log.debug('Payload: {}'.format(payload))
-    log.debug('Decoded payload: {}'.format(payload.decode()))
-    log.debug('Decoded payload; decoded JSON: {}'.format(data))
-    log.debug('WRITE: {}'.format(json.dumps([writeData])))
-
-    # system_write_images([writeData])
-
+    system_write_images([writeData])
 
 def init_app_mqtt(app) -> None:
     mqtt.init_app(app)

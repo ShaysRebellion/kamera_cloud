@@ -18,7 +18,11 @@ class ImageData(TypedDict):
     image_bytes: Optional[bytes]
 
 def system_read_image_metadata(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageMetadataEntry]:
-    return get_db_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
+    redis_key = str(hash((camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)))
+    metadata = get_cache_image_data([redis_key])
+    if not metadata: metadata = get_db_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
+    set_cache_image_data([{ 'redis_key': redis_key, 'data': metadata }])
+    return metadata
 
 def system_read_images(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageData]:
     image_metadata = system_read_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
@@ -46,8 +50,8 @@ def system_write_images(writeImageDataList: list[ImageDataInput]) -> None:
     upload_success_indices = [index for index, result in enumerate(upload_result) if result['result']]
     set_cache_image_data([
         {
-            'file_name': writeImageDataList[index]['file_name'],
-            'bytes_data': writeImageDataList[index]['byte_data']
+            'redis_key': writeImageDataList[index]['file_name'],
+            'data': writeImageDataList[index]['byte_data']
         } for index in upload_success_indices
     ])
 
