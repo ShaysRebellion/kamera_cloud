@@ -1,10 +1,10 @@
-import time
+import logging
 from typing import Optional, TypedDict
-
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
-
 from .utils import get_cluster_ip_address
+
+log = logging.getLogger(__name__)
 
 class ImageMetadataEntry(TypedDict):
     camera_id: int
@@ -24,18 +24,7 @@ connection_pool = ConnectionPool(
         )
     )
 
-def get_image_metadata(camera_id: Optional[int], timestamp_ms_lower: int, timestamp_ms_upper: int, image_type: Optional[str]) -> list[ImageMetadataEntry]:    
-    if not timestamp_ms_upper:
-        timestamp_ms_upper = round(time.time() * 1000)
-
-    if not timestamp_ms_lower:
-        timestamp_ms_lower = timestamp_ms_upper - (60 * 1000)
-
-    if timestamp_ms_lower > timestamp_ms_upper:
-        temp = timestamp_ms_lower
-        timestamp_ms_lower = timestamp_ms_upper
-        timestamp_ms_upper = temp
-    
+def get_db_image_metadata(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageMetadataEntry]:
     query = ' \
         SELECT * FROM image_metadata \
         WHERE {camera_id_condition} {timestamp_lower_condition} {timestamp_upper_condition} {image_type_condition} \
@@ -53,7 +42,7 @@ def get_image_metadata(camera_id: Optional[int], timestamp_ms_lower: int, timest
             data = cursor.fetchall()
     return data
 
-def set_image_metadata(data: list[ImageMetadataEntry]) -> None:
+def set_db_image_metadata(data: list[ImageMetadataEntry]) -> None:
     tuple_data = [tuple(entry.values()) for entry in data]
     with connection_pool.connection() as conn:
         with conn.cursor() as cursor:

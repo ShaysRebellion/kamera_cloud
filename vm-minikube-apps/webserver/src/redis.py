@@ -1,19 +1,27 @@
+import logging
+from typing import Any, TypedDict
 from redis.cluster import RedisCluster
 from .utils import get_cluster_ip_address
+
+log = logging.getLogger(__name__)
+
+class RedisCacheEntry(TypedDict):
+    redis_key: str
+    data: Any
 
 redis_connection = RedisCluster(
     host=get_cluster_ip_address('redis-cluster.redis-cluster.svc.cluster.local'),
     port=6379,
 )
 
-def get_image_data(aws_urls):
+def get_cache_image_data(redis_keys: list[str]):
     pipeline = redis_connection.pipeline()
-    for url in aws_urls:
+    for url in redis_keys:
         pipeline.get(url)
-    return pipeline.execute()
+    return pipeline.execute() # Note: redis pipeline guarantees execution order
 
-def set_image_data(aws_urls):
+def set_cache_image_data(data: list[RedisCacheEntry]):
     pipeline = redis_connection.pipeline()
-    for url, image in aws_urls.items():
-        pipeline.redis_connection.setex(url, 3600, image)
+    for entry in data:
+        pipeline.setex(entry['redis_key'], 3600, entry['data'])
     return pipeline.execute()
