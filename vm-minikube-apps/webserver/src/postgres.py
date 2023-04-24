@@ -27,13 +27,13 @@ connection_pool = ConnectionPool(
 def get_db_image_metadata(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageMetadataEntry]:
     query = ' \
         SELECT * FROM image_metadata \
-        WHERE {camera_id_condition} {timestamp_lower_condition} {timestamp_upper_condition} {image_type_condition} \
-        ORDER BY camera_id, timestamp, image_type ASC \
+        WHERE {camera_id_condition} {image_type_condition} {timestamp_lower_condition} {timestamp_upper_condition} \
+        ORDER BY camera_id, image_timestamp, image_type ASC \
     '.format(
-        camera_id_condition = 'camera_id = {} AND'.format(camera_id) if camera_id else '',
-        timestamp_lower_condition = 'timestamp >= {} AND'.format(timestamp_ms_lower),
-        timestamp_higher_condition = 'timestamp <= {} AND'.format(timestamp_ms_upper),
-        image_type_condition = 'image_type = {}'.format(image_type) if image_type else '',
+        camera_id_condition = "camera_id = {} AND".format(camera_id) if camera_id is None else "",
+        image_type_condition = "image_type = '{}' AND".format(image_type) if image_type is None else "",
+        timestamp_lower_condition = "image_timestamp >= {} AND".format(timestamp_ms_lower),
+        timestamp_upper_condition = "image_timestamp <= {}".format(timestamp_ms_upper),
     )
 
     with connection_pool.connection() as conn:

@@ -21,11 +21,11 @@ AWS_REGION = os.environ.get('AWS_S3_IMAGE_BUCKET_REGION', 'ap-northeast-1')
 def upload_bucket_files(data: list[AwsObjectData]) -> list[AwsOperationResult]:
     operation_results: list[AwsOperationResult] = []
     for entry in data:
-        result: AwsOperationResult = AwsOperationResult(object_name=entry['object_name'], result=False)
+        result: AwsOperationResult = AwsOperationResult(object_name=entry['object_name'], result=True)
         try:
             S3_CLIENT.upload_fileobj(io.BytesIO(entry['byte_data']), AWS_S3_BUCKET, entry['object_name'])
         except Exception as e:
-            log.warn(e)
+            log.info(e)
             result['result'] = False
         finally:
             operation_results.append(result)
@@ -38,7 +38,7 @@ def download_bucket_files(object_names: list[str]) -> list[AwsObjectData]:
         try:
             S3_CLIENT.download_fileobj(AWS_S3_BUCKET, name, bytes_buffer)
         except Exception as e:
-            log.warn(e)
+            log.info(e)
         finally:
             data_aggregate.append(AwsObjectData(object_name=name, byte_data=bytes_buffer.read()))
     return data_aggregate

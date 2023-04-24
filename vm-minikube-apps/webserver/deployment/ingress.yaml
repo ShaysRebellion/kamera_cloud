@@ -4,10 +4,10 @@ metadata:
   namespace: webserver
   name: webserver
   annotations:
-    kubernetes.io/ingress.class: ingress-nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-    - host: kamera-cloud.com
+    - host: a657-180-11-90-112.ngrok-free.app # This has to match ngrok domain name
       http:
         paths:
           - path: /
@@ -16,4 +16,4 @@ spec:
               service:
                 name: webserver
                 port:
-                  number: 80
+                  number: 8080
