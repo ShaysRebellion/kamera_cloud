@@ -57,11 +57,6 @@ if ! grep -q minikube.io /etc/hosts; then
     echo -e "192.168.49.2 minikube.io\n" >> /etc/hosts
 fi
 
-# if ! grep -q kamera-cloud.io /etc/hosts; then
-#     echo -e "# Apparently minikube ingress requires /etc/hosts entry..." >> /etc/hosts
-#     echo -e "192.168.49.2 kamera-cloud.io\n" >> /etc/hosts
-# fi
-
 # Set up nginx proxy for forwarding mqtt and http traffic
 cd /app
 docker pull nginx:latest

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional, TypedDict
 from .aws import download_bucket_files, upload_bucket_files
@@ -18,11 +19,18 @@ class ImageData(TypedDict):
     image_bytes: Optional[bytes]
 
 def system_read_image_metadata(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageMetadataEntry]:
+    image_metadata: list[ImageMetadataEntry] = []
+
     redis_key = str(hash((camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)))
-    metadata = get_cache_image_data([redis_key])
-    if not metadata: metadata = get_db_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
-    set_cache_image_data([{ 'redis_key': redis_key, 'data': metadata }])
-    return metadata
+    [metadata_json] = get_cache_image_data([redis_key])
+
+    if not metadata_json:
+        image_metadata = get_db_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
+        if len(image_metadata) != 0: set_cache_image_data([{ 'redis_key': redis_key, 'data': json.dumps(image_metadata) }])
+    else:
+        image_metadata = json.loads(metadata_json)
+
+    return image_metadata
 
 def system_read_images(camera_id: Optional[int], image_type: Optional[str], timestamp_ms_lower: int, timestamp_ms_upper: int) -> list[ImageData]:
     image_metadata = system_read_image_metadata(camera_id, image_type, timestamp_ms_lower, timestamp_ms_upper)
@@ -31,9 +39,6 @@ def system_read_images(camera_id: Optional[int], image_type: Optional[str], time
     download_result = download_bucket_files([get_file_name_from_aws_url(image_metadata[index]['bucket_url']) for index in cache_miss_indices])
     for index in cache_miss_indices:
         cache_data[index] = download_result[index]
-
-    log.warn('Image_metadata: {}'.format(image_metadata))
-    log.warn('Cache miss indices: {}'.format(cache_miss_indices))
 
     return [{ 'metadata': image_metadata[index], 'image_bytes': data } for index, data in enumerate(cache_data)]
 
