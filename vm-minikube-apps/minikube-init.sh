@@ -48,14 +48,19 @@ kubectl apply -f service.yaml
 kubectl apply -f deployment.yaml
 
 if ! grep -q host-vm.io /etc/hosts; then
-    sudo echo -e "# For listening/forwarding http traffic to (minikube) cluster" >> /etc/hosts
-    sudo echo -e "192.168.205.2 listen host-vm.io\n" >> /etc/hosts
+    echo -e "# For forwarding http traffic to (minikube) cluster" >> /etc/hosts
+    echo -e "192.168.205.2 listen host-vm.io\n" >> /etc/hosts
 fi
 
 if ! grep -q minikube.io /etc/hosts; then
-    sudo echo -e "# For forwarding/forwarding mqtt traffic to (minikube) cluster" >> /etc/hosts
-    sudo echo -e "192.168.49.2 minikube.io\n" >> /etc/hosts
+    echo -e "# For forwarding mqtt traffic to (minikube) cluster" >> /etc/hosts
+    echo -e "192.168.49.2 minikube.io\n" >> /etc/hosts
 fi
+
+# if ! grep -q kamera-cloud.io /etc/hosts; then
+#     echo -e "# Apparently minikube ingress requires /etc/hosts entry..." >> /etc/hosts
+#     echo -e "192.168.49.2 kamera-cloud.io\n" >> /etc/hosts
+# fi
 
 # Set up nginx proxy for forwarding mqtt and http traffic
 cd /app

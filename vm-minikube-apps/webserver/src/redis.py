@@ -23,5 +23,5 @@ def get_cache_image_data(redis_keys: list[str]):
 def set_cache_image_data(data: list[RedisCacheEntry]):
     pipeline = redis_connection.pipeline()
     for entry in data:
-        pipeline.setex(entry['redis_key'], 3600, entry['data'])
+        pipeline.set(entry['redis_key'], entry['data'])
     return pipeline.execute()

@@ -6,4 +6,4 @@ metadata:
 data:
   redis.conf: |
     cluster-enabled yes
-    maxmemory-policy volatile-lfu
+    maxmemory-policy allkeys-lfu

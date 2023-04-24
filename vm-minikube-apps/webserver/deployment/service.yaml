@@ -9,5 +9,5 @@ spec:
     app: webserver
   ports:
     - name: webserver-port
-      port: 80
-      targetPort: 80
+      port: 8080
+      targetPort: 8080

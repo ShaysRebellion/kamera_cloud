@@ -32,8 +32,8 @@ def system_read_images(camera_id: Optional[int], image_type: Optional[str], time
     for index in cache_miss_indices:
         cache_data[index] = download_result[index]
 
-    log.debug('Image_metadata: {}'.format(image_metadata))
-    log.debug('Cache miss indices: {}'.format(cache_miss_indices))
+    log.warn('Image_metadata: {}'.format(image_metadata))
+    log.warn('Cache miss indices: {}'.format(cache_miss_indices))
 
     return [{ 'metadata': image_metadata[index], 'image_bytes': data } for index, data in enumerate(cache_data)]
 
@@ -48,6 +48,7 @@ def system_write_images(writeImageDataList: list[ImageDataInput]) -> None:
     # Only write to cache and database for images that successfully uploaded to preserve consistent state
     # In other words, redis cluster server and postgres server should only reflect what's available in bucket
     upload_success_indices = [index for index, result in enumerate(upload_result) if result['result']]
+
     set_cache_image_data([
         {
             'redis_key': writeImageDataList[index]['file_name'],

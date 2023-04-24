@@ -4,7 +4,7 @@ metadata:
   namespace: webserver
   name: webserver
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: webserver
@@ -24,7 +24,7 @@ spec:
             - name: AWS_S3_IMAGE_BUCKET_REGION
               value: ap-northeast-1
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           resources:
             requests:
               cpu: 100m
